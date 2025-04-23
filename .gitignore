@@ -1,0 +1,43 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+*.log
+
+# Virtual envs
+venv/
+env/
+.venv/
+
+# Environment & secrets
+.env
+.env.*
+
+# IDEs
+.vscode/
+.idea/
+
+# Pytest & test cache
+.pytest_cache/
+coverage.*
+.cache/
+.tox/
+.nox/
+
+# Jupyter / IPython (if used)
+.ipynb_checkpoints/
+*.ipynb
+
+# Mac/Linux/Windows OS junk
+.DS_Store
+Thumbs.db
+
+# FlowPilot-specific
+workflows/*.json         # optional: ignore saved/generated workflows
+logs/

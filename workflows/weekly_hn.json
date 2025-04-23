@@ -1,0 +1,33 @@
+{
+    "name": "weekly_hn_digest",
+    "trigger": {
+      "type": "scheduler",
+      "event": "cron",
+      "params": {
+        "expression": "0 9 * * 1"
+      }
+    },
+    "steps": [
+      {
+        "type": "api.fetch_hacker_news",
+        "params": {
+          "limit": 3
+        }
+      },
+      {
+        "type": "ai.summarize",
+        "params": {
+          "text": "{{ steps.0.output }}"
+        }
+      },
+      {
+        "type": "email.send",
+        "params": {
+          "to": "me@example.com",
+          "subject": "Your Weekly HN Summary",
+          "body": "{{ steps.1.output }}"
+        }
+      }
+    ]
+}
+  
