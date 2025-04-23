@@ -1,0 +1,28 @@
+{
+  "type": "workflow",
+  "name": "weather_updates_email",
+  "trigger": {
+    "type": "scheduler",
+    "event": "cron",
+    "params": {
+      "location": "user_location"
+    }
+  },
+  "steps": [
+    {
+      "type": "ai.summarize",
+      "params": {
+        "location": "{{ trigger.location }}"
+      }
+    },
+    {
+      "type": "email.send",
+      "params": {
+        "recipient": "user_email",
+        "subject": "Daily Weather Update",
+        "body": "Today's weather: {{ steps.0.output }}"
+      }
+    }
+  ],
+  "version": "1.0"
+}

@@ -5,6 +5,7 @@ from  openai import OpenAI
 import os
 from dotenv import load_dotenv
 import re
+import sys
 
 load_dotenv()
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
@@ -14,7 +15,6 @@ def resolve_template(template: str, context: dict):
     matches = re.findall(pattern, template)
 
     for match in matches:
-        # Split by dots for deep lookup
         parts = match.split(".")
         value = context
         try:
@@ -79,5 +79,27 @@ def run_workflow_from_file(filepath):
 
     print("\n🎉 Workflow complete.")
 
+
+def run():
+    workflows_dir = "workflows"
+
+    # Get filename from CLI arg
+    if len(sys.argv) > 1:
+        filename = sys.argv[1]
+    else:
+        print("📁 Available workflows:")
+        for wf in os.listdir(workflows_dir):
+            if wf.endswith(".json"):
+                print(f"- {wf}")
+        filename = input("\n📝 Enter the workflow file to run: ").strip()
+
+    filepath = os.path.join(workflows_dir, filename)
+
+    if not os.path.exists(filepath):
+        print(f"❌ Workflow not found: {filepath}")
+        return
+
+    run_workflow_from_file(filepath)
+
 if __name__ == "__main__":
-    run_workflow_from_file("workflows/weekly_hn.json")
+    run()
