@@ -1,0 +1,29 @@
+{
+  "type": "workflow",
+  "name": "weather_to_email",
+  "trigger": {
+    "type": "scheduler",
+    "params": {
+      "expression": "0 9 * * *"
+    },
+    "event": "cron"
+  },
+  "steps": [
+    {
+      "type": "weather.fetch_forecast",
+      "params": {
+        "location": "New Jersey",
+        "unit": "imperial"
+      }
+    },
+    {
+      "type": "email.send",
+      "params": {
+        "to": "me@example.com",
+        "subject": "Weather Forecast in New Jersey",
+        "body": "The weather forecast for today in New Jersey is: {{ steps.0.output }}"
+      }
+    }
+  ],
+  "version": "1.0"
+}

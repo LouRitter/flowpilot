@@ -1,56 +1,54 @@
-from typing import Optional, List, Dict, Literal, Union
-from pydantic import BaseModel, Field
+from __future__ import annotations
+from pydantic import BaseModel, create_model, model_validator, TypeAdapter
+from typing import Literal, Union, List, Dict, Any
+from connectors.registry import REGISTRY
 
-class CronTrigger(BaseModel):
-    type: Literal["scheduler"]
-    event: Literal["cron"]
-    params: dict = Field(default_factory=lambda: {"expression": "0 9 * * *"})
+# === Dynamically generate connector models from REGISTRY ===
 
-class GitHubTrigger(BaseModel):
-    type: Literal["github"]
-    event: Literal["issue_created"]
-    params: dict = Field(default_factory=lambda: {"repo": "my-org/my-repo"})
+step_models = {}
+trigger_models = {}
 
-class WebhookTrigger(BaseModel):
-    type: Literal["webhook"]
-    event: str
-    params: dict = Field(default_factory=lambda: {"url": "https://example.com/webhook"})
+for key, meta in REGISTRY.items():
+    model_name = meta["model_name"]
+    fields = {
+        "params": (Dict[str, Any], ...)
+    }
 
-Trigger = Union[CronTrigger, GitHubTrigger, WebhookTrigger]
+    if meta.get("category") == "trigger":
+        # Example: "scheduler.cron" → type = scheduler, event = cron
+        type_part, event_part = key.split(".", 1)
+        fields["type"] = (Literal[type_part], type_part)
+        fields["event"] = (Literal[event_part], event_part)
+        trigger_models[key] = create_model(model_name, **fields, __base__=BaseModel)
+    else:
+        # Regular step
+        fields["type"] = (Literal[key], key)
+        step_models[key] = create_model(model_name, **fields, __base__=BaseModel)
 
-from typing import Literal
+# === Build dynamic type unions ===
+Step = Union[tuple(step_models.values())]
+Trigger = Union[tuple(trigger_models.values())]
 
-class AISummarizeStep(BaseModel):
-    type: Literal["ai.summarize"]
-    params: dict = Field(default_factory=lambda: {"text": ""})
-    class Config:
-        extra = "forbid"
-
-class EmailSendStep(BaseModel):
-    type: Literal["email.send"]
-    params: dict = Field(default_factory=lambda: {
-        "to": "you@example.com",
-        "subject": "Subject",
-        "body": "Body text"
-    })
-
-class HackerNewsFetchStep(BaseModel):
-    type: Literal["api.fetch_hacker_news"]
-    params: dict = Field(default_factory=lambda: {
-        "limit": 3
-    })
-class NotionCreateTaskStep(BaseModel):
-    type: Literal["notion.create_task"]
-    params: dict = Field(default_factory=lambda: {
-        "title": "Task Title",
-        "content": "Task Content"
-    })
-
-Step = Union[AISummarizeStep, EmailSendStep, HackerNewsFetchStep, NotionCreateTaskStep]
-
+# === Workflow Schema ===
 class Workflow(BaseModel):
-    type: Literal["workflow"] = "workflow"
+    type: Literal["workflow"]
     name: str
-    trigger: Trigger
-    steps: List[Step] 
     version: str = "1.0"
+    trigger: Trigger
+    steps: List[Step]
+
+    @model_validator(mode="before")
+    @classmethod
+    def ensure_parsed_models(cls, values: dict) -> dict:
+        # Use TypeAdapter to validate Trigger and Step union types
+        trigger_adapter = TypeAdapter(Trigger)
+        step_adapter = TypeAdapter(Step)
+
+        if isinstance(values.get("trigger"), dict):
+            values["trigger"] = trigger_adapter.validate_python(values["trigger"])
+
+        values["steps"] = [
+            step_adapter.validate_python(step) if isinstance(step, dict) else step
+            for step in values.get("steps", [])
+        ]
+        return values

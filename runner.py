@@ -1,105 +1,84 @@
 import json
-from core.schema import Workflow
-from pydantic import ValidationError
-from  openai import OpenAI
-import os
-from dotenv import load_dotenv
-import re
 import sys
+from core.schema import Workflow
+from core.prompt_handler import sanitize_workflow_dict
+from connectors import ai, email, notion, github, slack, api, doc, weather
+from jinja2 import Template
 
-load_dotenv()
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+# Maps step type to handler
+STEP_HANDLERS = {
+    "ai.summarize": ai.run,
+    "email.send": email.run,
+    "notion.create_task": notion.run,
+    "notion.append_block": notion.run,
+    "github.comment_pr": github.run,
+    "github.label_check": github.run,
+    "github.create_issue": github.run,
+    "slack.send_message": slack.run,
+    "discord.send_message": slack.run,
+    "api.fetch_hacker_news": api.run,
+    "api.http_get": api.run,
+    "weather.fetch_forecast": weather.run,
+    "doc.generate_summary": doc.run,
+    "doc.save_to_file": doc.run
+}
 
-def resolve_template(template: str, context: dict):
-    pattern = r"{{\s*(.*?)\s*}}"
-    matches = re.findall(pattern, template)
 
-    for match in matches:
-        parts = match.split(".")
-        value = context
-        try:
-            for part in parts:
-                if part.isdigit():
-                    value = value[int(part)]
-                else:
-                    value = value[part]
-            template = template.replace(f"{{{{ {match} }}}}", str(value))
-        except Exception as e:
-            template = template.replace(f"{{{{ {match} }}}}", f"[ERROR: {e}]")
-    return template
+def resolve_templates(params: dict, context: dict) -> dict:
+    resolved = {}
+    for key, value in params.items():
+        if isinstance(value, str):
+            try:
+                resolved[key] = Template(value).render(context)
+            except Exception as e:
+                resolved[key] = f"[Template error: {e}]"
+        else:
+            resolved[key] = value
+    return resolved
+
 
 def run_step(step, context):
     step_type = step.type
-    params = step.params
+    params = resolve_templates(step.params, context)
+    print(f"\n➡️ Running step: {step_type}")
 
-    if step_type == "ai.summarize":
-        input_text = resolve_template(params.get("text", ""), context)
-        print("🧠 Calling OpenAI to summarize...")
-        response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": "user", "content": f"Summarize this:\n\n{input_text}"}
-            ],
-            temperature=0.2
-        )
-        return response.choices[0].message.content
-
-    elif step_type == "email.send":
-        to = resolve_template(params["to"], context)
-        subject = resolve_template(params["subject"], context)
-        body = resolve_template(params["body"], context)
-        print(f"📧 Sending email to {to}:\nSubject: {subject}\nBody:\n{body}")
-        return "Email sent (mocked)"
-
-    elif step_type == "api.fetch_hacker_news":
-        print("🌐 Fetching Hacker News top stories (mock)...")
-        return "1. Story A\n2. Story B\n3. Story C"
-
+    if step_type in STEP_HANDLERS:
+        output = STEP_HANDLERS[step_type](params, context)
+        return output
     else:
         print(f"⚠️ Unknown step type: {step_type}")
         return None
 
-def run_workflow_from_file(filepath):
-    with open(filepath, "r") as f:
-        data = json.load(f)
-    try:
-        wf = Workflow(**data)
-    except ValidationError as e:
-        print("❌ Invalid workflow:", e)
-        return
 
-    print(f"🚀 Running workflow: {wf.name}")
-    context = {"trigger": wf.trigger.params, "steps": {}}
+def run_workflow(workflow: Workflow):
+    print(f"\n🚀 Running workflow: {workflow.name}")
+    context = {
+        "trigger": workflow.trigger.params,
+        "steps": {}
+    }
 
-    for i, step in enumerate(wf.steps):
-        print(f"\n➡️ Step {i}: {step.type}")
+    for i, step in enumerate(workflow.steps):
         output = run_step(step, context)
         context["steps"][i] = {"output": output}
-        print(f"✅ Output:\n{output}")
+        print(f"✅ Step {i} output: {output}")
 
     print("\n🎉 Workflow complete.")
 
 
-def run():
-    workflows_dir = "workflows"
-
-    # Get filename from CLI arg
-    if len(sys.argv) > 1:
-        filename = sys.argv[1]
-    else:
-        print("📁 Available workflows:")
-        for wf in os.listdir(workflows_dir):
-            if wf.endswith(".json"):
-                print(f"- {wf}")
-        filename = input("\n📝 Enter the workflow file to run: ").strip()
-
-    filepath = os.path.join(workflows_dir, filename)
-
-    if not os.path.exists(filepath):
-        print(f"❌ Workflow not found: {filepath}")
-        return
-
-    run_workflow_from_file(filepath)
-
 if __name__ == "__main__":
-    run()
+    print("🏁 Runner started")
+
+    if len(sys.argv) < 2:
+        print("Usage: python runner.py workflows/your_workflow.json")
+        sys.exit(1)
+
+    # Load workflow JSON
+    with open(sys.argv[1], "r") as f:
+        raw_data = json.load(f)
+
+    # Sanitize and parse as Pydantic model
+    sanitized = sanitize_workflow_dict(raw_data)
+    workflow = Workflow(**sanitized)
+
+    # Run the workflow
+    run_workflow(workflow)
