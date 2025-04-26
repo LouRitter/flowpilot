@@ -18,7 +18,7 @@ env/
 # Environment & secrets
 .env
 .env.*
-.secrets.json
+.secrets.*
 
 # IDEs
 .vscode/
