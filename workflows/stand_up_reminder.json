@@ -1,0 +1,22 @@
+{
+  "type": "workflow",
+  "name": "stand_up_reminder",
+  "version": "1.0",
+  "trigger": {
+    "params": {
+      "expression": "0 9 * * *"
+    },
+    "type": "scheduler",
+    "event": "cron"
+  },
+  "steps": [
+    {
+      "params": {
+        "repo": "my-org/my-repo",
+        "title": "Stand up and stretch reminder",
+        "body": "Don't forget to stand up and stretch every hour to stay healthy!"
+      },
+      "type": "github.create_issue"
+    }
+  ]
+}

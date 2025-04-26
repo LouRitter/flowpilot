@@ -1,0 +1,27 @@
+{
+  "type": "workflow",
+  "name": "issue_to_notion",
+  "version": "1.0",
+  "trigger": {
+    "params": {
+      "repo": "my-org/my-repo"
+    },
+    "type": "github",
+    "event": "issue_created"
+  },
+  "steps": [
+    {
+      "params": {
+        "text": "{{ trigger.body }}"
+      },
+      "type": "ai.summarize"
+    },
+    {
+      "params": {
+        "title": "{{ trigger.title }}",
+        "content": "{{ steps.0.output }}"
+      },
+      "type": "notion.create_task"
+    }
+  ]
+}
