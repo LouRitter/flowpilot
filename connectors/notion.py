@@ -1,48 +1,44 @@
+# connectors/notion.py
+
 import requests
-import os
-import json
+from core.secrets import SecretsManager
 
 def run(params: dict, context: dict = None):
-    with open(".secrets.json") as f:
-        secrets = json.load(f)
+    secrets = SecretsManager()
+    notion_token = secrets.get("NOTION_TOKEN")
 
-    NOTION_TOKEN = secrets["NOTION_TOKEN"]
-    DATABASE_ID = secrets["NOTION_DATABASE_ID"]
+    # User must now specify parent_id (page_id or database_id)
+    parent_id = params.get("parent_id")
+    if not parent_id:
+        raise ValueError("Missing 'parent_id' for Notion page creation.")
 
-    title = params.get("title", "Untitled Task")
-    content = params.get("content", "No content")
+    title = params.get("title", "Untitled Page")
+    properties = params.get("properties", {})
+    children = params.get("children", [])
 
     headers = {
-        "Authorization": f"Bearer {NOTION_TOKEN}",
+        "Authorization": f"Bearer {notion_token}",
         "Notion-Version": "2022-06-28",
         "Content-Type": "application/json"
     }
 
     body = {
-        "parent": {"database_id": DATABASE_ID},
-        "properties": {
+        "parent": {"database_id": parent_id},  # Or page_id (later improve detection)
+        "properties": properties or {
             "Name": {
                 "title": [
                     {"text": {"content": title}}
                 ]
             }
         },
-        "children": [
-            {
-                "object": "block",
-                "type": "paragraph",
-                "paragraph": {
-                    "rich_text": [{"text": {"content": content}}]
-                }
-            }
-        ]
+        "children": children
     }
 
-    res = requests.post("https://api.notion.com/v1/pages", headers=headers, json=body)
+    response = requests.post("https://api.notion.com/v1/pages", headers=headers, json=body)
 
-    if res.status_code != 200:
-        print("❌ Failed to create Notion task:", res.text)
+    if response.status_code != 200:
+        print(f"❌ Failed to create Notion page: {response.text}")
         return None
 
-    print("✅ Notion task created")
-    return res.json().get("url")
+    print("✅ Notion page created successfully")
+    return response.json().get("url")

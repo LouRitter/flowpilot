@@ -85,6 +85,12 @@ REGISTRY = {
         },
         "category": "productivity"
     },
+    "notion.create_page": {
+        "model_name": "NotionCreatePageStep",
+        "description": "Create a flexible page in Notion under a database or page.",
+        "required_params": ["parent_id"],
+        "category": "productivity"
+    },
     "notion.append_block": {
         "model_name": "NotionAppendBlockStep",
         "description": "Append content to an existing Notion page.",

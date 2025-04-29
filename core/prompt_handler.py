@@ -99,6 +99,7 @@ JSON:
         content = response.choices[0].message.content
         data = json.loads(content)
         data = sanitize_workflow_dict(data)
+        data = fill_missing_parameters(data)
         return Workflow(**data)
     except (json.JSONDecodeError, ValidationError) as e:
         raise ValueError(f"Invalid workflow output: {e}")
@@ -126,6 +127,27 @@ def validate_trigger(trigger: dict):
             raise ValueError(
                 f"Missing required parameter '{param}' for trigger type '{key}'"
             )
+
+def fill_missing_parameters(workflow_dict: dict):
+    from connectors.registry import REGISTRY
+
+    for i, step in enumerate(workflow_dict.get("steps", [])):
+        step_type = step.get("type")
+        step_params = step.get("params", {})
+
+        if step_type not in REGISTRY:
+            continue
+
+        required_params = REGISTRY[step_type]["required_params"]
+
+        for param in required_params:
+            if param not in step_params or not step_params[param] or step_params[param] == "[MISSING]":
+                value = input(f"🔧 Step {i}: Please enter value for required param '{param}' (for '{step_type}'): ")
+                step_params[param] = value
+
+        workflow_dict["steps"][i]["params"] = step_params
+
+    return workflow_dict
 
 def sanitize_workflow_dict(data: dict) -> dict:
     # --- Fix malformed trigger ---

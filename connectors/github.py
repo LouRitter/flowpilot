@@ -2,13 +2,19 @@
 
 import requests
 import json
+from core.secrets import SecretsManager
 
 def run(params: dict, context: dict = None):
-    with open(".secrets.json") as f:
-        secrets = json.load(f)
+    secrets = SecretsManager()
 
-    token = secrets["GITHUB_TOKEN"]
-    repo = secrets["GITHUB_REPO"]
+    token = secrets.get("GITHUB_TOKEN")
+    if not token:
+        print("❌ GitHub token not found in secrets.")
+        return None
+    repo = secrets.get("GITHUB_REPO")
+    if not repo:
+        print("❌ GitHub repository not found in secrets.")
+        return None
 
     title = params.get("title", "New issue")
     body = params.get("body", "No description")
