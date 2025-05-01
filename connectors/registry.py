@@ -1,173 +1,118 @@
 # connectors/registry.py
 
 REGISTRY = {
-    # === Built-in / Utility ===
+    # === Utility ===
     "ai.summarize": {
         "model_name": "AISummarizeStep",
         "description": "Use OpenAI to summarize text.",
-        "params": {
-            "text": {"required": True, "default": "Summarize this input."}
-        },
+        "required_params": ["text"],
         "category": "utility"
     },
+
+    # === Communication ===
     "email.send": {
         "model_name": "EmailSendStep",
-        "description": "Send an email to one or more recipients.",
-        "params": {
-            "to": {"required": True, "default": "you@example.com"},
-            "subject": {"required": True, "default": "No subject"},
-            "body": {"required": True, "default": "Empty body"}
-        },
+        "description": "Send an email with subject and body.",
+        "required_params": ["to", "subject", "body"],
+        "category": "communication"
+    },
+    "slack.send_message": {
+        "model_name": "SlackSendMessageStep",
+        "description": "Send a message to a Slack channel.",
+        "required_params": ["channel", "message"],
+        "category": "communication"
+    },
+    "discord.send_message": {
+        "model_name": "DiscordSendMessageStep",
+        "description": "Send a message via a Discord webhook.",
+        "required_params": ["webhook_url", "content"],
         "category": "communication"
     },
 
-    # === Triggers ===
-    "scheduler.cron": {
-        "model_name": "CronTrigger",
-        "description": "Run the workflow on a recurring cron schedule.",
-        "params": {
-            "expression": {"required": True, "default": "0 9 * * *"}
-        },
-        "category": "trigger"
+    # === Notion ===
+    "notion.create_page": {
+        "model_name": "NotionCreatePageStep",
+        "description": "Create a flexible page in Notion under a database or page.",
+        "required_params": ["parent_id", "title"],
+        "category": "productivity"
     },
-    "webhook.receive": {
-        "model_name": "WebhookTrigger",
-        "description": "Trigger a workflow via incoming webhook.",
-        "params": {},
-        "category": "trigger"
+    "notion.append_block": {
+        "model_name": "NotionAppendBlockStep",
+        "description": "Append content blocks to a Notion page.",
+        "required_params": ["page_id", "text"],
+        "category": "productivity"
     },
-    "github.issue_created": {
-        "model_name": "GitHubIssueCreatedTrigger",
-        "description": "Trigger when a GitHub issue is created.",
-        "params": {
-            "repo": {"required": True, "default": "my-org/my-repo"}
-        },
-        "category": "trigger"
+    "notion.update_page": {
+        "model_name": "NotionUpdatePageStep",
+        "description": "Update properties of an existing Notion page.",
+        "required_params": ["page_id", "properties"],
+        "category": "productivity"
+    },
+    "notion.query_database": {
+        "model_name": "NotionQueryDatabaseStep",
+        "description": "Query a Notion database with filters.",
+        "required_params": ["database_id"],
+        "category": "productivity"
     },
 
-    # === API Fetching ===
-    "api.fetch_hacker_news": {
-        "model_name": "HackerNewsFetchStep",
-        "description": "Fetch top stories from Hacker News.",
-        "params": {
-            "limit": {"required": False, "default": 3}
-        },
-        "category": "api"
+    # === GitHub ===
+    "github.create_issue": {
+        "model_name": "GitHubCreateIssueStep",
+        "description": "Create a new issue in a GitHub repository.",
+        "required_params": ["repo", "title"],
+        "category": "devtools"
     },
-    "api.http_get": {
-        "model_name": "GenericHttpGetStep",
-        "description": "Make a simple HTTP GET request.",
-        "params": {
-            "url": {"required": True, "default": "https://example.com"},
-            "headers": {"required": False, "default": {}}
-        },
-        "category": "api"
+    "github.comment_issue": {
+        "model_name": "GitHubCommentIssueStep",
+        "description": "Add a comment to a GitHub issue.",
+        "required_params": ["repo", "issue_number", "comment"],
+        "category": "devtools"
+    },
+    "github.add_label": {
+        "model_name": "GitHubAddLabelStep",
+        "description": "Add a label to an existing GitHub issue.",
+        "required_params": ["repo", "issue_number", "labels"],
+        "category": "devtools"
+    },
+    "github.close_issue": {
+        "model_name": "GitHubCloseIssueStep",
+        "description": "Close a GitHub issue.",
+        "required_params": ["repo", "issue_number"],
+        "category": "devtools"
+    },
+    "github.create_repo": {
+        "model_name": "GitHubCreateRepoStep",
+        "description": "Create a new GitHub repository.",
+        "required_params": ["name"],
+        "category": "devtools"
+    },
+    "github.query_issues": {
+        "model_name": "GitHubQueryIssuesStep",
+        "description": "Query open issues from a GitHub repository.",
+        "required_params": ["repo"],
+        "category": "devtools"
     },
 
     # === Weather ===
     "weather.fetch_forecast": {
         "model_name": "WeatherFetchForecastStep",
-        "description": "Get current or upcoming weather for a location.",
-        "params": {
-            "location": {"required": True, "default": "New York"},
-            "unit": {"required": False, "default": "imperial"}
-        },
+        "description": "Get the current weather forecast for a location.",
+        "required_params": ["location"],
         "category": "api"
     },
 
-    # === Notion ===
-    "notion.create_task": {
-        "model_name": "NotionCreateTaskStep",
-        "description": "Create a task or page in Notion.",
-        "params": {
-            "title": {"required": True, "default": "New Task"},
-            "content": {"required": True, "default": "Task description"}
-        },
-        "category": "productivity"
-    },
-    "notion.create_page": {
-        "model_name": "NotionCreatePageStep",
-        "description": "Create a flexible page in Notion under a database or page.",
-        "required_params": ["parent_id"],
-        "category": "productivity"
-    },
-    "notion.append_block": {
-        "model_name": "NotionAppendBlockStep",
-        "description": "Append content to an existing Notion page.",
-        "params": {
-            "page_id": {"required": True, "default": "[MISSING_PAGE_ID]"},
-            "text": {"required": True, "default": "Additional content"}
-        },
-        "category": "productivity"
+    # === Scheduler Triggers ===
+    "scheduler.cron": {
+        "model_name": "CronTrigger",
+        "description": "Run the workflow on a recurring cron schedule.",
+        "required_params": ["expression"],
+        "category": "trigger"
     },
 
-    # === GitHub Actions ===
-    "github.comment_pr": {
-        "model_name": "GitHubCommentPRStep",
-        "description": "Add a comment to a GitHub pull request.",
-        "params": {
-            "pr_number": {"required": True, "default": 1},
-            "message": {"required": True, "default": "Thanks for your contribution!"}
-        },
-        "category": "devtools"
-    },
-    "github.label_check": {
-        "model_name": "GitHubLabelCheckStep",
-        "description": "Check if a PR has a specific label.",
-        "params": {
-            "pr_number": {"required": True, "default": 1},
-            "label": {"required": True, "default": "ready-for-review"}
-        },
-        "category": "devtools"
-    },
-    "github.create_issue": {
-        "model_name": "GitHubCreateIssueStep",
-        "description": "Create a new issue in a GitHub repository.",
-        "params": {
-            "repo": {"required": True, "default": "my-org/my-repo"},
-            "title": {"required": True, "default": "Bug report"},
-            "body": {"required": True, "default": "Describe the issue here."}
-        },
-        "category": "devtools"
-    },
-
-    # === Slack / Discord ===
-    "slack.send_message": {
-        "model_name": "SlackSendMessageStep",
-        "description": "Send a message to a Slack channel.",
-        "params": {
-            "channel": {"required": True, "default": "#general"},
-            "message": {"required": True, "default": "Hello from FlowPilot!"}
-        },
-        "category": "communication"
-    },
-    "discord.send_message": {
-        "model_name": "DiscordSendMessageStep",
-        "description": "Send a message using a Discord webhook.",
-        "params": {
-            "webhook_url": {"required": True, "default": "[DISCORD_WEBHOOK_URL]"},
-            "content": {"required": True, "default": "Hello from FlowPilot!"}
-        },
-        "category": "communication"
-    },
-
-    # === Docs / Output ===
-    "doc.generate_summary": {
-        "model_name": "DocGenerateSummaryStep",
-        "description": "Generate a report from content (markdown or HTML).",
-        "params": {
-            "text": {"required": True, "default": "Here's what happened today..."},
-            "format": {"required": False, "default": "markdown"}
-        },
-        "category": "docs"
-    },
-    "doc.save_to_file": {
-        "model_name": "DocSaveToFileStep",
-        "description": "Save given content to a local file.",
-        "params": {
-            "filename": {"required": True, "default": "output.md"},
-            "content": {"required": True, "default": "# Report\n\nNo content."}
-        },
-        "category": "docs"
+    "webhook.receive": {
+        "model_name": "WebhookTrigger",
+        "description": "Trigger a workflow via incoming webhook.",
+        "required_params": [],
+        "category": "trigger"
     }
 }

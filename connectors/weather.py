@@ -7,14 +7,20 @@ def run(params: dict, context: dict = None) -> str:
     secrets = SecretsManager()
     api_key = secrets.get("OPENWEATHERMAP_API_KEY")
 
-    location = params.get("location", "New York")
-    units = params.get("unit", "imperial")  # or "metric"
-    print(f"🌦️ [Weather] Fetching real forecast for {location}...")
+    location = params.get("location")
+    if not location:
+        raise ValueError("Missing 'location' for weather step.")
+
+    units = params.get("units", "imperial")  # Optional
+    lang = params.get("lang", "en")          # Optional
+
+    print(f"🌦️ [Weather] Fetching forecast for {location}...")
 
     url = "https://api.openweathermap.org/data/2.5/weather"
     response = requests.get(url, params={
         "q": location,
         "units": units,
+        "lang": lang,
         "appid": api_key
     })
 
