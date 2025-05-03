@@ -1,0 +1,28 @@
+{
+  "type": "workflow",
+  "name": "github_pr_summary_comment",
+  "version": "1.0",
+  "trigger": {
+    "params": {},
+    "type": "webhook",
+    "event": "receive"
+  },
+  "steps": [
+    {
+      "params": {
+        "repo": "louritter/flowpilot",
+        "_step_type": "github.query_issues"
+      },
+      "type": "github.query_issues"
+    },
+    {
+      "params": {
+        "repo": "louritter/flowpilot",
+        "pr_number": "5",
+        "message": "Changes requested for merging into master: {{ steps.0.output }}",
+        "_step_type": "github.comment_pr"
+      },
+      "type": "github.comment_pr"
+    }
+  ]
+}
