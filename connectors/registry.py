@@ -92,6 +92,12 @@ REGISTRY = {
         "required_params": ["repo"],
         "category": "devtools"
     },
+    "github.comment_pr": {
+        "model_name": "GitHubCommentPRStep",
+        "description": "Post a comment on a GitHub pull request.",
+        "required_params": ["repo", "pr_number", "message"],
+        "category": "devtools"
+    },
 
     # === Weather ===
     "weather.fetch_forecast": {
