@@ -92,6 +92,24 @@ REGISTRY = {
         "required_params": ["repo"],
         "category": "devtools"
     },
+    "github.comment_pr": {
+        "model_name": "GitHubCommentPRStep",
+        "description": "Post a comment on a GitHub pull request.",
+        "required_params": ["repo", "pr_number", "message"],
+        "category": "devtools"
+    },
+    "github.get_pr_description": {
+        "model_name": "GitHubGetPRDescriptionStep",
+        "description": "Fetch the description/body of a pull request.",
+        "required_params": ["repo", "pr_number"],
+        "category": "devtools"
+    },
+    "github.get_pr_diff": {
+        "model_name": "GitHubGetPRDiffStep",
+        "description": "Fetch the raw diff of a pull request for summarizing code changes.",
+        "required_params": ["repo", "pr_number"],
+        "category": "devtools"
+    },
 
     # === Weather ===
     "weather.fetch_forecast": {

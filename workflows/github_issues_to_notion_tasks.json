@@ -1,0 +1,36 @@
+{
+  "type": "workflow",
+  "name": "github_issues_to_notion_tasks",
+  "version": "1.0",
+  "trigger": {
+    "params": {},
+    "type": "webhook",
+    "event": "receive"
+  },
+  "steps": [
+    {
+      "params": {
+        "repo": "louritter/flowpilot",
+        "_step_type": "github.query_issues"
+      },
+      "type": "github.query_issues"
+    },
+    {
+      "params": {
+        "text": "{{ steps.0.output }}"
+      },
+      "type": "ai.summarize"
+    },
+    {
+      "params": {
+        "parent_id": "1e8af18af3e48084a19cf93f3f85eef4",
+        "title": "GitHub Tasks",
+        "properties": {
+          "Task Summary": "{{ steps.1.output }}"
+        },
+        "_step_type": "notion.create_page"
+      },
+      "type": "notion.create_page"
+    }
+  ]
+}

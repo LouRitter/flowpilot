@@ -1,5 +1,6 @@
 import json
 import sys
+import os
 from core.schema import Workflow
 from core.prompt_handler import sanitize_workflow_dict
 from connectors import ai, email, notion, github, slack, api, doc, weather
@@ -14,6 +15,8 @@ STEP_HANDLERS = {
     "github.comment_pr": github.run,
     "github.label_check": github.run,
     "github.create_issue": github.run,
+    "github.get_pr_description": github.run,
+    "github.get_pr_diff": github.run,
     "slack.send_message": slack.run,
     "discord.send_message": slack.run,
     "api.fetch_hacker_news": api.run,
@@ -23,32 +26,42 @@ STEP_HANDLERS = {
     "doc.save_to_file": doc.run
 }
 
-
-def resolve_templates(params: dict, context: dict) -> dict:
-    resolved = {}
-    for key, value in params.items():
-        if isinstance(value, str):
-            try:
-                resolved[key] = Template(value).render(context)
-            except Exception as e:
-                resolved[key] = f"[Template error: {e}]"
-        else:
-            resolved[key] = value
-    return resolved
-
+def resolve_templates(obj, context):
+    if isinstance(obj, str):
+        try:
+            return Template(obj).render(context)
+        except Exception as e:
+            return f"[Template error: {e}]"
+    elif isinstance(obj, dict):
+        return {k: resolve_templates(v, context) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [resolve_templates(v, context) for v in obj]
+    else:
+        return obj
 
 def run_step(step, context):
     step_type = step.type
     params = resolve_templates(step.params, context)
     print(f"\n➡️ Running step: {step_type}")
 
+    # Check static handlers first
     if step_type in STEP_HANDLERS:
         output = STEP_HANDLERS[step_type](params, context)
         return output
-    else:
-        print(f"⚠️ Unknown step type: {step_type}")
-        return None
 
+    # Check if _step_type is defined (e.g. github.query_issues)
+    step_meta_type = step.params.get("_step_type", "")
+    if "." in step_meta_type:
+        module_name = step_meta_type.split(".")[0]
+        try:
+            module = __import__(f"connectors.{module_name}", fromlist=["run"])
+            return module.run(params, context)
+        except Exception as e:
+            print(f"❌ Failed to run {step_type} from connector '{module_name}': {e}")
+            return None
+
+    print(f"⚠️ Unknown step type: {step_type}")
+    return None
 
 def run_workflow(workflow: Workflow):
     print(f"\n🚀 Running workflow: {workflow.name}")
@@ -64,7 +77,6 @@ def run_workflow(workflow: Workflow):
 
     print("\n🎉 Workflow complete.")
 
-
 if __name__ == "__main__":
     print("🏁 Runner started")
 
@@ -72,13 +84,15 @@ if __name__ == "__main__":
         print("Usage: python runner.py workflows/your_workflow.json")
         sys.exit(1)
 
-    # Load workflow JSON
-    with open(sys.argv[1], "r") as f:
+    workflow_path = sys.argv[1]
+
+    if not os.path.exists(workflow_path):
+        print(f"❌ Workflow file not found: {workflow_path}")
+        sys.exit(1)
+
+    with open(workflow_path) as f:
         raw_data = json.load(f)
 
-    # Sanitize and parse as Pydantic model
     sanitized = sanitize_workflow_dict(raw_data)
     workflow = Workflow(**sanitized)
-
-    # Run the workflow
     run_workflow(workflow)
