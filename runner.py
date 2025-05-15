@@ -15,6 +15,7 @@ STEP_HANDLERS = {
     "github.comment_pr": github.run,
     "github.label_check": github.run,
     "github.create_issue": github.run,
+    "github.get_pr_description": github.run,
     "slack.send_message": slack.run,
     "discord.send_message": slack.run,
     "api.fetch_hacker_news": api.run,

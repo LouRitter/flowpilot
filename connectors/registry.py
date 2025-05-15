@@ -98,6 +98,12 @@ REGISTRY = {
         "required_params": ["repo", "pr_number", "message"],
         "category": "devtools"
     },
+    "github.get_pr_description": {
+        "model_name": "GitHubGetPRDescriptionStep",
+        "description": "Fetch the description/body of a pull request.",
+        "required_params": ["repo", "pr_number"],
+        "category": "devtools"
+    },
 
     # === Weather ===
     "weather.fetch_forecast": {
