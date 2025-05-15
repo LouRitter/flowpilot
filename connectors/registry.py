@@ -104,6 +104,12 @@ REGISTRY = {
         "required_params": ["repo", "pr_number"],
         "category": "devtools"
     },
+    "github.get_pr_diff": {
+        "model_name": "GitHubGetPRDiffStep",
+        "description": "Fetch the raw diff of a pull request for summarizing code changes.",
+        "required_params": ["repo", "pr_number"],
+        "category": "devtools"
+    },
 
     # === Weather ===
     "weather.fetch_forecast": {

@@ -71,6 +71,16 @@ def run(params: dict, context: dict = None):
             print(f"❌ Failed to fetch PR: {res.status_code} {res.text}")
             return None
         return res.json().get("body") or "[No description provided]"
+    elif step_type == "github.get_pr_diff":
+        repo = params["repo"]
+        pr_number = params["pr_number"]
+        url = f"https://api.github.com/repos/{repo}/pulls/{pr_number}"
+        headers["Accept"] = "application/vnd.github.v3.diff"  # Get diff format
+        res = requests.get(url, headers=headers)
+        if res.status_code != 200:
+            print(f"❌ Failed to fetch PR diff: {res.status_code} {res.text}")
+            return None
+        return res.text[:8000]  # Truncate to avoid context overload
     else:
         print(f"⚠️ Unknown GitHub step: {step_type}")
         return None
