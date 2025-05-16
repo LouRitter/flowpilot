@@ -7,8 +7,6 @@ def run(params: dict, context: dict = None):
 
     parent_id = params.get("parent_id")
     parent_type = params.get("parent_type", "database")
-    if not parent_id:
-        raise ValueError("Missing 'parent_id' for Notion page creation.")
 
     title = params.get("title", "Untitled Page")
     input_properties = params.get("properties", {})
