@@ -1,0 +1,29 @@
+{
+  "type": "workflow",
+  "name": "notion_flowers_page",
+  "version": "1.0",
+  "trigger": {
+    "params": {},
+    "type": "webhook",
+    "event": "receive"
+  },
+  "steps": [
+    {
+      "params": {
+        "parent_id": "57e61e2322c945968869f951f2484624",
+        "title": "Flowers Page",
+        "_step_type": "notion.create_page",
+        "parent_type": "page"
+      },
+      "type": "notion.create_page"
+    },
+    {
+      "params": {
+        "page_id": "{{ steps.0.output }}",
+        "text": "This page is about flowers.",
+        "_step_type": "notion.append_block"
+      },
+      "type": "notion.append_block"
+    }
+  ]
+}
